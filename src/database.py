@@ -1,0 +1,245 @@
+import os
+import sqlite3
+from typing import Any, Dict, List
+
+DB_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "data", "spare_parts.db"
+)
+
+# ---------------------------------------------------------------------------
+# Sample data – 20 car spare parts across several categories
+# ---------------------------------------------------------------------------
+SAMPLE_PARTS = [
+    (
+        1, "OF-001", "Oil Filter Standard",
+        "Standard oil filter for 4-cylinder gasoline engines. "
+        "Replaces OEM part for most Japanese and Korean vehicles. "
+        "Recommended replacement interval: every 5,000 miles.",
+        12.99, "in_stock", "Engine",
+        "Toyota Camry 2018-2023, Honda Civic 2016-2022, Hyundai Elantra 2017-2023",
+    ),
+    (
+        2, "OF-002", "Oil Filter Premium Extended Life",
+        "High-performance synthetic media oil filter with service life up to "
+        "10,000 miles. Features anti-drain-back valve and silicone gasket.",
+        19.99, "in_stock", "Engine",
+        "Ford F-150 2015-2023, Chevrolet Silverado 2014-2022, Ram 1500 2013-2022",
+    ),
+    (
+        3, "BP-001", "Front Brake Pads Ceramic",
+        "Ceramic front brake pads providing quiet, low-dust braking performance. "
+        "Includes shims and hardware kit.",
+        45.99, "in_stock", "Brake System",
+        "Toyota Camry 2018-2023, Nissan Altima 2019-2023, Mazda 6 2014-2021",
+    ),
+    (
+        4, "BP-002", "Rear Brake Pads Semi-Metallic",
+        "Semi-metallic rear brake pads for reliable stopping power in all "
+        "conditions. Slot and chamfer design reduces noise.",
+        39.99, "in_stock", "Brake System",
+        "Toyota Camry 2018-2023, Honda Accord 2018-2022, Subaru Legacy 2015-2022",
+    ),
+    (
+        5, "AF-001", "Engine Air Filter High-Flow",
+        "High-flow engine air filter improves airflow for better performance and "
+        "fuel economy. Captures dust, pollen, and airborne particles.",
+        18.99, "in_stock", "Filters",
+        "Toyota Camry 2018-2023, Mazda 3 2019-2023, Toyota Corolla 2019-2023",
+    ),
+    (
+        6, "SP-001", "Spark Plugs Iridium Set of 4",
+        "Fine-wire iridium tip spark plugs for maximum ignitability and long "
+        "service life. Reduces misfire for improved fuel efficiency.",
+        34.99, "in_stock", "Engine",
+        "Honda Civic 2016-2022, Toyota Corolla 2019-2023, Mazda 3 2019-2023",
+    ),
+    (
+        7, "TB-001", "Timing Belt Kit Complete",
+        "Complete timing belt kit with timing belt, tensioner, idler pulley, and "
+        "water pump. Recommended replacement: every 60,000-90,000 miles.",
+        89.99, "low_stock", "Engine",
+        "Honda CR-V 2015-2021, Subaru Forester 2014-2018, Acura TLX 2015-2020",
+    ),
+    (
+        8, "RAD-001", "Aluminum Radiator Complete Assembly",
+        "Full aluminum core radiator with plastic tanks and OE-fit hose "
+        "connections. Improves cooling efficiency by 20% over original.",
+        189.99, "in_stock", "Cooling System",
+        "Toyota Camry 2018-2023, Chevrolet Malibu 2016-2022, Toyota RAV4 2019-2023",
+    ),
+    (
+        9, "ALT-001", "Alternator 130A Remanufactured",
+        "Professional-grade remanufactured alternator with 130A output. "
+        "New rectifier, voltage regulator, and bearings. 100% electrically tested.",
+        249.99, "in_stock", "Electrical",
+        "Ford Focus 2012-2018, Ford Fusion 2013-2020, Lincoln MKZ 2013-2020",
+    ),
+    (
+        10, "ST-001", "Starter Motor 1.4kW Remanufactured",
+        "Heavy-duty remanufactured starter motor with 1.4kW output. "
+        "New solenoid and brushes installed. Designed for cold-weather reliability.",
+        199.99, "low_stock", "Electrical",
+        "Volkswagen Golf 2010-2019, Audi A3 2012-2020, Seat Leon 2012-2020",
+    ),
+    (
+        11, "SB-001", "Serpentine Belt EPDM",
+        "Heavy-duty EPDM serpentine belt drives alternator, power steering pump, "
+        "A/C compressor, and water pump. Resists heat and cracking.",
+        29.99, "in_stock", "Engine",
+        "Ford Mustang 2015-2023, Dodge Charger 2011-2023, Dodge Challenger 2009-2023",
+    ),
+    (
+        12, "WP-001", "Water Pump with Gasket",
+        "Cast iron impeller water pump for reliable coolant circulation. "
+        "Includes mounting gasket and hardware. Ceramic mechanical seal.",
+        79.99, "in_stock", "Cooling System",
+        "BMW 3 Series 2012-2019, BMW 5 Series 2010-2017, BMW X5 2013-2019",
+    ),
+    (
+        13, "CAB-001", "Cabin Air Filter HEPA Grade",
+        "HEPA-grade cabin air filter removes 99.97% of pollen, dust, and PM2.5 "
+        "particles. Activated carbon layer neutralises odours.",
+        24.99, "in_stock", "Filters",
+        "Toyota RAV4 2019-2023, Honda CR-V 2017-2022, Toyota Highlander 2014-2023",
+    ),
+    (
+        14, "SHK-001", "Front Gas Shock Absorber",
+        "Gas-pressurised front shock absorber for improved ride comfort and "
+        "vehicle stability. Monotube design with multi-stage valving.",
+        119.99, "in_stock", "Suspension",
+        "Nissan Sentra 2013-2019, Hyundai Elantra 2014-2020, Kia Forte 2014-2020",
+    ),
+    (
+        15, "THR-001", "Electronic Throttle Body 60mm",
+        "Precision electronic throttle body with 60mm bore. Controls air intake "
+        "for accurate fuel injection. Includes gasket and wiring connector.",
+        159.99, "out_of_stock", "Engine",
+        "Chevrolet Cruze 2011-2016, Buick Verano 2012-2017, Chevrolet Sonic 2012-2020",
+    ),
+    (
+        16, "IGN-001", "Ignition Coil Pack Direct",
+        "High-energy direct ignition coil pack for waste-spark systems. "
+        "Epoxy-sealed winding resists moisture. Improves spark energy.",
+        29.99, "in_stock", "Electrical",
+        "Ford Escape 2013-2019, Ford Focus 2012-2018, Lincoln MKC 2015-2019",
+    ),
+    (
+        17, "FP-001", "Fuel Pump Module Complete",
+        "Complete in-tank fuel pump module with fuel pump, sending unit, float "
+        "arm, and strainer sock. Maintains proper fuel pressure.",
+        149.99, "in_stock", "Fuel System",
+        "Chevrolet Malibu 2016-2022, Buick LaCrosse 2017-2019, Cadillac XT5 2017-2023",
+    ),
+    (
+        18, "CV-001", "Front CV Axle Shaft Assembly",
+        "Complete front CV axle shaft with pre-packed inner and outer CV joints. "
+        "New boots and clamps included. Ready to install.",
+        89.99, "in_stock", "Drivetrain",
+        "Honda Civic 2016-2022, Honda Accord 2018-2022, Acura ILX 2013-2022",
+    ),
+    (
+        19, "TH-001", "Thermostat with Housing",
+        "Engine thermostat with integrated housing and O-ring seal. "
+        "Maintains optimal engine operating temperature of 195°F.",
+        34.99, "in_stock", "Cooling System",
+        "Toyota Camry 2018-2023, Toyota Corolla 2019-2023, Lexus ES 2019-2023",
+    ),
+    (
+        20, "BRK-001", "Front Vented Brake Rotor",
+        "Vented disc brake rotor with anti-corrosion coating. Precision machined "
+        "for smooth, vibration-free braking. Directional vanes improve cooling.",
+        49.99, "in_stock", "Brake System",
+        "Toyota Camry 2018-2023, Honda Accord 2018-2022, Nissan Altima 2019-2023",
+    ),
+]
+
+
+def init_database() -> None:
+    """Create the SQLite database and populate it with sample spare parts."""
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS spare_parts (
+            id               INTEGER PRIMARY KEY,
+            part_number      TEXT UNIQUE NOT NULL,
+            name             TEXT NOT NULL,
+            description      TEXT,
+            price            REAL,
+            availability     TEXT,
+            category         TEXT,
+            compatible_models TEXT
+        )
+        """
+    )
+
+    cursor.execute("SELECT COUNT(*) FROM spare_parts")
+    if cursor.fetchone()[0] == 0:
+        cursor.executemany(
+            "INSERT INTO spare_parts VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            SAMPLE_PARTS,
+        )
+        print(f"  Database initialised with {len(SAMPLE_PARTS)} parts.")
+
+    conn.commit()
+    conn.close()
+
+
+def search_parts_db(query: str) -> List[Dict[str, Any]]:
+    """
+    Search for car spare parts in the local SQLite database using keyword
+    matching across name, description, category, part number, and compatible
+    models columns.
+    """
+    if not os.path.exists(DB_PATH):
+        init_database()
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Tokenise the query, ignore very short tokens
+    keywords = [kw for kw in query.lower().split() if len(kw) > 2]
+    if not keywords:
+        conn.close()
+        return []
+
+    conditions: List[str] = []
+    params: List[str] = []
+    for keyword in keywords:
+        conditions.append(
+            "(LOWER(name) LIKE ? OR LOWER(description) LIKE ? OR "
+            "LOWER(category) LIKE ? OR LOWER(part_number) LIKE ? OR "
+            "LOWER(compatible_models) LIKE ?)"
+        )
+        like = f"%{keyword}%"
+        params.extend([like] * 5)
+
+    sql = f"SELECT * FROM spare_parts WHERE {' OR '.join(conditions)}"
+    cursor.execute(sql, params)
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Deduplicate by part_number
+    seen: set = set()
+    results: List[Dict[str, Any]] = []
+    for row in rows:
+        if row[1] not in seen:
+            seen.add(row[1])
+            results.append(
+                {
+                    "id": row[0],
+                    "part_number": row[1],
+                    "name": row[2],
+                    "description": row[3],
+                    "price": row[4],
+                    "availability": row[5],
+                    "category": row[6],
+                    "compatible_models": row[7],
+                    "source": "local_database",
+                }
+            )
+
+    return results
