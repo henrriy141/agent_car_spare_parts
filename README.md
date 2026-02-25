@@ -56,36 +56,52 @@ agent_car_spare_parts/
 
 ```mermaid
 flowchart LR
-  %% Main execution lane
-  subgraph PIPELINE[LangGraph Pipeline]
-    direction LR
-    A([User Query\nstate.input]) --> B[DB Specialist]
-    B --> C[RAG Expert]
-    C --> D[Web Researcher]
-    D --> E[Compiler]
-    E --> F([Final Answer\nstate.final_answer])
-  end
+    %% Main execution lane
+    subgraph PIPELINE [<b>⚙️ LangGraph Sequential Pipeline</b>]
+        direction LR
+        A([<b>📥 User Input</b><br/><i>state.input</i>]) 
+        
+        subgraph AGENTS [<b>Agent Nodes</b>]
+            direction LR
+            B[[<b>🔍 DB Specialist</b>]]
+            C[[<b>📚 RAG Expert</b>]]
+            D[[<b>🌐 Web Researcher</b>]]
+            E[[<b>📝 Compiler</b>]]
+        end
+        
+        F([<b>📤 Final Answer</b><br/><i>state.final_answer</i>])
+    end
 
-  %% External sources
-  subgraph SOURCES[Data Sources]
-    direction TB
-    G[(SQLite DB\ndata/spare_parts.db)]
-    H[(FAISS Index\ndata/vectorstore)]
-    I[(DuckDuckGo Search)]
-  end
+    %% External sources
+    subgraph SOURCES [<b>📦 External Data Sources</b>]
+        direction TB
+        G[(<b>🗄️ SQLite DB</b><br/>local_inventory.db)]
+        H[(<b>🧠 FAISS Index</b><br/>vectorstore)]
+        I[(<b>📡 Web Search</b><br/>DuckDuckGo)]
+    end
 
-  G -. provides inventory .-> B
-  H -. provides technical context .-> C
-  I -. provides market context .-> D
+    %% Flow Connections
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
 
-  %% Visual styles
-  classDef io fill:#EEF2FF,stroke:#4F46E5,stroke-width:2px,color:#111827;
-  classDef agents fill:#F8FAFC,stroke:#334155,stroke-width:1.5px,color:#0F172A;
-  classDef sources fill:#ECFEFF,stroke:#0891B2,stroke-width:1.5px,color:#0C4A6E;
+    %% Source Connections
+    G -.-> B
+    H -.-> C
+    I -.-> D
 
-  class A,F io;
-  class B,C,D,E agents;
-  class G,H,I sources;
+    %% Visual styles
+    classDef io fill:#f0f4ff,stroke:#5c7cfa,stroke-width:2px,color:#2b3674,font-weight:bold;
+    classDef agents fill:#ffffff,stroke:#1e293b,stroke-width:2px,color:#1e293b;
+    classDef sources fill:#e6fcf5,stroke:#099268,stroke-width:2px,color:#099268;
+    classDef subGraphStyle fill:#f8fafc,stroke:#cbd5e1,stroke-dasharray: 5 5;
+
+    class A,F io;
+    class B,C,D,E agents;
+    class G,H,I sources;
+    class PIPELINE,SOURCES,AGENTS subGraphStyle;
 ```
 
 1. **DB Specialist** (`src/nodes/db_specialist.py`)
