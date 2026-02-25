@@ -1,5 +1,8 @@
 # AutoPart AI - Multi-Agent Spare Parts Assistant
 
+<img width="1881" height="899" alt="image" src="https://github.com/user-attachments/assets/61deba84-7294-47e5-b81c-7a2794cadd35" />
+
+
 This project is a LangGraph-based multi-agent system for car spare parts recommendations.
 It combines:
 
