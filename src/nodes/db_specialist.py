@@ -1,5 +1,6 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.agent_toolkits import create_sql_agent
+from nodes.web_researcher import web_researcher_node
 from src.state import AgentState
 from src.tools.sql_tool import get_sql_toolkit
 import google.generativeai as genai
@@ -62,8 +63,12 @@ def db_specialist_node(state: AgentState):
             clean_text = str(output)
 
         print(f"--- clean result: {clean_text} ---")
-        return {"db_data": clean_text}
+
+        state["db_results"] = clean_text
+        return state
     
     except Exception as e:
-        return {"db_data": f"Error al procesar: {str(e)}"}
-   
+        state["db_results"] = f"Error al procesar: {str(e)}"
+        return state
+    
+run = db_specialist_node

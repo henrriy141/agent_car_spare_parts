@@ -1,19 +1,43 @@
 from pathlib import Path
 from typing import Any, Dict, List
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+from typing import Iterable
+from langchain_core.documents import Document as LCDocument
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 
-DOCUMENTS_DIR = Path(__file__).resolve().parents[2] / "data" / "documents"
+VECTORSTORE_PATH = Path(__file__).resolve().parents[2] / "data" / "vectorstore"
 
 
-def init_rag_store() -> None:
-    DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
+def load_vectorstore() -> FAISS:
+    """Load FAISS vectorstore from disk."""
+    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+    vectorstore = FAISS.load_local(
+        str(VECTORSTORE_PATH),
+        embeddings,
+        allow_dangerous_deserialization=True,
+    )
+    return vectorstore
 
+def format_docs(docs: Iterable[LCDocument]):
+    return "\n\n".join(doc.page_content for doc in docs)
 
-def search_documents(query: str) -> List[Dict[str, Any]]:
-    init_rag_store()
-    return [
-        {
-            "content": f"No indexed vectors yet for query: {query}",
-            "source": "local_documents",
-            "page": "N/A",
-        }
-    ]
+def search_documents( llm=None):
+    """Search the vectorstore for documents similar to the query."""
+    vectorstore = load_vectorstore()
+    retriever = vectorstore.as_retriever()
+    
+    prompt = PromptTemplate.from_template(
+        "Context information is below.\n---------------------\n{context}\n---------------------\nGiven the context information and not prior knowledge, answer the query.\nQuery: {question}\nAnswer:\n"
+    )
+
+    rag_chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+    return rag_chain
+        
