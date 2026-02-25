@@ -15,3 +15,4 @@ langchain-milvus
 google-generativeai 
 langchain-google-genai
 duckduckgo-search
+ddgs

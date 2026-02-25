@@ -2,18 +2,24 @@ from src.state import AgentState
 from src.tools.search_tool import web_search
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=GOOGLE_API_KEY)
+# 4. Use Gemini to summarize the web findings
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 
 def web_researcher_node(state: AgentState):
     
-    # 4. Use Gemini to summarize the web findings
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
-
     search_results = web_search(state["query"])
     
     web_prompt = f"""
     You are a Market Research Assistant.
     
-    INTERNAL DATA: {state['db_data']}
+    INTERNAL DATA: {state['db_results']}
     INTERNET SEARCH RESULTS: {search_results}
     
     Based on the search results, provide a brief summary of the current market context 

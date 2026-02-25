@@ -1,5 +1,4 @@
 from typing import Any, Dict, List
-from src.tools.search_tool import web_search
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_google_genai import ChatGoogleGenerativeAI
 from src.state import AgentState
