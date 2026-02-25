@@ -56,15 +56,36 @@ agent_car_spare_parts/
 
 ```mermaid
 flowchart LR
-    A[User Query\ninput] --> B[DB Specialist\nsrc/nodes/db_specialist.py]
-    B --> C[RAG Expert\nsrc/nodes/rag_expert.py]
-    C --> D[Web Researcher\nsrc/nodes/web_researcher.py]
-    D --> E[Compiler\nsrc/nodes/compiler.py]
-    E --> F[Final Answer\nstate.final_answer]
+  %% Main execution lane
+  subgraph PIPELINE[LangGraph Pipeline]
+    direction LR
+    A([User Query\nstate.input]) --> B[DB Specialist]
+    B --> C[RAG Expert]
+    C --> D[Web Researcher]
+    D --> E[Compiler]
+    E --> F([Final Answer\nstate.final_answer])
+  end
 
-    G[(SQLite\ndata/spare_parts.db)] --> B
-    H[(FAISS\ndata/vectorstore)] --> C
-    I[(DuckDuckGo\nWeb Search)] --> D
+  %% External sources
+  subgraph SOURCES[Data Sources]
+    direction TB
+    G[(SQLite DB\ndata/spare_parts.db)]
+    H[(FAISS Index\ndata/vectorstore)]
+    I[(DuckDuckGo Search)]
+  end
+
+  G -. provides inventory .-> B
+  H -. provides technical context .-> C
+  I -. provides market context .-> D
+
+  %% Visual styles
+  classDef io fill:#EEF2FF,stroke:#4F46E5,stroke-width:2px,color:#111827;
+  classDef agents fill:#F8FAFC,stroke:#334155,stroke-width:1.5px,color:#0F172A;
+  classDef sources fill:#ECFEFF,stroke:#0891B2,stroke-width:1.5px,color:#0C4A6E;
+
+  class A,F io;
+  class B,C,D,E agents;
+  class G,H,I sources;
 ```
 
 1. **DB Specialist** (`src/nodes/db_specialist.py`)
