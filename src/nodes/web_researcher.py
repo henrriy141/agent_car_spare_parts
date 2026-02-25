@@ -14,7 +14,7 @@ llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 
 def web_researcher_node(state: AgentState):
     
-    search_results = web_search(state["query"])
+    search_results = web_search(state["input"])
     
     # Prompt the model to compare internal data with web results.
     web_prompt = f"""

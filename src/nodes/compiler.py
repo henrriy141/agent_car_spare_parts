@@ -19,7 +19,7 @@ def compiler_node(state: AgentState) -> AgentState:
     base_answer = state.get("final_answer", "").strip()
     if not base_answer:
         lines = [
-            f"Query: {state['query']}",
+            f"Query: {state['input']}",
             f"DB results: {state['db_results']}",
             f"RAG results: {state['rag_results']}",
             f"Web results: {state['web_results']}",

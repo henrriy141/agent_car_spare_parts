@@ -17,7 +17,7 @@ llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash",google_api_key=GOOGLE_API_
 
 def rag_expert_node(state: AgentState) -> AgentState:
     """RAG expert node: search vectorstore for relevant documents."""
-    query = state["query"]
+    query = state["input"]
     print("--- EJECUTANDO AGENTE RAG (RAG EXPERT) ---")
     rag_results = search_documents(llm=llm)
     state["rag_results"] = rag_results.invoke(query)

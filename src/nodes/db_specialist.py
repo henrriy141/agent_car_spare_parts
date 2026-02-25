@@ -6,6 +6,16 @@ import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 
+from pydantic import BaseModel, Field
+from typing import Optional
+
+class PartDetails(BaseModel):
+    part_number: str = Field(description="The unique identifier for the spare part")
+    name: str = Field(description="The formal name of the part")
+    price: float = Field(description="The internal retail price")
+    status: str = Field(description="Availability: in_stock, out_of_stock, or low_stock")
+    compatibility: list[str] = Field(description="List of compatible car models")
+
 load_dotenv()
 import os
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -13,10 +23,11 @@ genai.configure(api_key=GOOGLE_API_KEY)
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash",google_api_key=GOOGLE_API_KEY)
+structured_llm = llm.with_structured_output(PartDetails)
 
 def db_specialist_node(state: AgentState):
     print("--- EJECUTANDO AGENTE SQL (DB SPECIALIST) ---")
-    query = state["query"]
+    query = state["input"]
     
     toolkit = get_sql_toolkit(llm)
 
@@ -45,30 +56,38 @@ def db_specialist_node(state: AgentState):
         prefix=SQL_AGENT_PROMPT,
     )
     
-    # Execute the query
-    response = executor.invoke({"input": query})
+ 
     try:
-        output = response["output"]
+        # Step A: Get raw info from DB using the agent
+        response = executor.invoke({"input": query})
+        raw_output = response["output"]
 
-        # 1. Si el output es una lista (como en tu caso)
-        if isinstance(output, list) and len(output) > 0:
-            # Extraemos el campo 'text' del primer elemento
-            clean_text = output[0].get('text', str(output[0]))
-        
-        # 2. Si el output ya es un string directo
-        elif isinstance(output, str):
-            clean_text = output
-            
+        # Handle Gemini metadata if present
+        if isinstance(raw_output, list) and len(raw_output) > 0:
+            raw_text = raw_output[0].get('text', str(raw_output[0]))
         else:
-            clean_text = str(output)
+            raw_text = str(raw_output)
 
-        #print(f"--- clean result: {clean_text} ---")
+        # Step B: Parse the raw DB text into Structured Output (Pydantic)
+        print("--- STRUCTURING OUTPUT WITH PYDANTIC ---")
+        structured_data = structured_llm.invoke(
+            f"Extract part details from this database record: {raw_text}"
+        )
 
-        state["db_results"] = clean_text
-        return state
+        # Convert Pydantic object to string for the RAG/Web agents or 
+        # store the object itself if your state allows it.
+        formatted_result = (
+            f"Part Name: {structured_data.name} | "
+            f"ID: {structured_data.part_number} | "
+            f"Price: {structured_data.price} | "
+            f"Status: {structured_data.status} | "
+            f"Compatibility: {', '.join(structured_data.compatibility)}"
+        )
+
+        return {"db_results": formatted_result}
     
     except Exception as e:
-        state["db_results"] = f"Error al procesar: {str(e)}"
-        return state
+        print(f"Error: {e}")
+        return {"db_results": f"No structured data found. Error: {str(e)}"}
     
 run = db_specialist_node
