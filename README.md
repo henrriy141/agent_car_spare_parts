@@ -51,6 +51,19 @@ agent_car_spare_parts/
 
 ### Graph flow
 
+```mermaid
+flowchart LR
+    A[User Query\ninput] --> B[DB Specialist\nsrc/nodes/db_specialist.py]
+    B --> C[RAG Expert\nsrc/nodes/rag_expert.py]
+    C --> D[Web Researcher\nsrc/nodes/web_researcher.py]
+    D --> E[Compiler\nsrc/nodes/compiler.py]
+    E --> F[Final Answer\nstate.final_answer]
+
+    G[(SQLite\ndata/spare_parts.db)] --> B
+    H[(FAISS\ndata/vectorstore)] --> C
+    I[(DuckDuckGo\nWeb Search)] --> D
+```
+
 1. **DB Specialist** (`src/nodes/db_specialist.py`)
   - Uses a SQL agent to find matching parts, price, status, and compatibility.
 
