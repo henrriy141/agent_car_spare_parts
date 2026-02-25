@@ -8,9 +8,11 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 
+# Location of the persisted FAISS vectorstore.
 VECTORSTORE_PATH = Path(__file__).resolve().parents[2] / "data" / "vectorstore"
 
 
+# Load the FAISS vectorstore from disk using the same embeddings.
 def load_vectorstore() -> FAISS:
     """Load FAISS vectorstore from disk."""
     embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
@@ -21,9 +23,11 @@ def load_vectorstore() -> FAISS:
     )
     return vectorstore
 
+# Join retrieved documents into a single context string.
 def format_docs(docs: Iterable[LCDocument]):
     return "\n\n".join(doc.page_content for doc in docs)
 
+# Build a RAG chain that uses the vectorstore retriever and an LLM.
 def search_documents( llm=None):
     """Search the vectorstore for documents similar to the query."""
     vectorstore = load_vectorstore()

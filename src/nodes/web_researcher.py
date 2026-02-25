@@ -16,20 +16,28 @@ def web_researcher_node(state: AgentState):
     
     search_results = web_search(state["query"])
     
+    # Prompt the model to compare internal data with web results.
     web_prompt = f"""
-    You are a Market Research Assistant.
     
+    ### ROLE
+    You are a Strategic Sales Analyst for a spare parts company. Your goal is to compare our internal offers with the current internet market to highlight our competitive advantages.
+
+    ### DATA
     INTERNAL DATA: {state['db_results']}
     INTERNET SEARCH RESULTS: {search_results}
+
+    ### TASK
+    1. Compare our price, part number, and availability with the search results found online.
+    2. Identify at least one reason why the customer should choose us (e.g., our price is lower, we have it in stock while others don't, or our part is a confirmed OEM match).
+    3. Summarize the market context and provide a brief "Value Proposition" explaining our advantage.
+
+    ### RULES
+    - Provide the answer in plain text only.
+    - Absolutely NO markdown, NO bolding (**), and NO symbols.
+    - Be concise (max 4-5 sentences).
+    - If the internet price is lower, focus on our "immediate availability" or "guaranteed compatibility."
+    - If no relevant info is found, simply say: No external market data found to compare.
     
-    Based on the search results, provide a brief summary of the current market context 
-    (like average online price or recent customer feedback) for this part.
-    
-    Rules:
-    - Provide the answer in plain text.
-    - No markdown or special formatting.
-    - Be concise (max 3-4 sentences).
-    - If no relevant info is found, simply say 'No external market data found'.
     """
     
     response = llm.invoke(web_prompt)

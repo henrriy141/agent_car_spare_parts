@@ -1,3 +1,4 @@
+# Utilities to ingest PDF documents into a FAISS vectorstore.
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -25,6 +26,7 @@ def load_pdf_with_pdfplumber(file_path: str) -> list[LCDocument]:
     return docs
 
 
+# Orchestrate PDF loading, splitting, and vectorstore build.
 def ingest_documents():
     FILE_PATH = r"C:\Users\henry.garcia\Documents\agent_spare_car_parts\agent_car_spare_parts\data\catalog.pdf"
     

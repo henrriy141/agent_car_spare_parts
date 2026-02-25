@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, TypedDict
 
 
+# Shared state passed between all agent nodes.
 class AgentState(TypedDict):
     query: str
     db_results: List[Dict[str, Any]]

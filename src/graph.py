@@ -7,6 +7,7 @@ from src.nodes.web_researcher import web_researcher_node
 from src.state import AgentState
 
 
+# Define the linear agent workflow.
 workflow = StateGraph(AgentState)
 
 workflow.add_node("db_agent", db_specialist_node)
@@ -23,6 +24,7 @@ workflow.add_edge("compiler_agent", END)
 app = workflow.compile()
 
 
+# Execute the compiled workflow for a single query.
 def run_graph(query: str) -> AgentState:
     state: AgentState = {
         "query": query,

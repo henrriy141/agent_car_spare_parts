@@ -20,6 +20,7 @@ def db_specialist_node(state: AgentState):
     
     toolkit = get_sql_toolkit(llm)
 
+    # Instruction prompt for the SQL agent.
     SQL_AGENT_PROMPT = """You are an agent designed to interact with a SQL database.
         Given an input question, identify the product or products that match the query 
         and create a syntactically correct sqlite query to run,
@@ -35,16 +36,16 @@ def db_specialist_node(state: AgentState):
         If no data is found, explain which tables you consulted and why no results were returned.
         """
     
-    # Agente ejecutor
+    # Agent executor
     executor = create_sql_agent(
         llm=llm,
         toolkit=toolkit,
-        verbose=True,
+        verbose=False,
         agent_type="tool-calling",
         prefix=SQL_AGENT_PROMPT,
     )
     
-    # Ejecutar la consulta
+    # Execute the query
     response = executor.invoke({"input": query})
     try:
         output = response["output"]
@@ -61,7 +62,7 @@ def db_specialist_node(state: AgentState):
         else:
             clean_text = str(output)
 
-        print(f"--- clean result: {clean_text} ---")
+        #print(f"--- clean result: {clean_text} ---")
 
         state["db_results"] = clean_text
         return state
